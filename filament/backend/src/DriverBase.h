@@ -16,7 +16,7 @@
 
 #ifndef TNT_FILAMENT_DRIVER_DRIVERBASE_H
 #define TNT_FILAMENT_DRIVER_DRIVERBASE_H
-
+#include <memory>
 #include <utils/compiler.h>
 #include <utils/CString.h>
 
@@ -35,167 +35,189 @@
 #include <assert.h>
 #include <stdint.h>
 
-namespace filament {
-namespace backend {
+namespace filament
+{
+    namespace backend
+    {
 
-class Dispatcher;
+        class Dispatcher;
 
-/*
+        /*
  * Hardware handles
  */
 
-struct HwBase {
+        struct HwBase
+        {
 #if !defined(NDEBUG) && UTILS_HAS_RTTI
-    const char* typeId = nullptr;
+            const char *typeId = nullptr;
 #endif
-};
+        };
 
-struct HwVertexBuffer : public HwBase {
-    AttributeArray attributes{};          // 8 * MAX_VERTEX_ATTRIBUTE_COUNT
-    uint32_t vertexCount{};               //   4
-    uint8_t bufferCount{};                //   1
-    uint8_t attributeCount{};             //   1
-    uint8_t padding[2]{};                 //   2 -> total struct is 136 bytes
+        struct HwVertexBuffer : public HwBase
+        {
+            AttributeArray attributes{}; // 8 * MAX_VERTEX_ATTRIBUTE_COUNT
+            uint32_t vertexCount{};      //   4
+            uint8_t bufferCount{};       //   1
+            uint8_t attributeCount{};    //   1
+            uint8_t padding[2]{};        //   2 -> total struct is 136 bytes
 
-    HwVertexBuffer() noexcept = default;
-    HwVertexBuffer(uint8_t bufferCount, uint8_t attributeCount, uint32_t elementCount,
-            AttributeArray const& attributes) noexcept
-            : attributes(attributes),
-              vertexCount(elementCount),
-              bufferCount(bufferCount),
-              attributeCount(attributeCount) {
-    }
-};
+            HwVertexBuffer() noexcept = default;
+            HwVertexBuffer(uint8_t bufferCount, uint8_t attributeCount, uint32_t elementCount,
+                           AttributeArray const &attributes) noexcept
+                : attributes(attributes),
+                  vertexCount(elementCount),
+                  bufferCount(bufferCount),
+                  attributeCount(attributeCount)
+            {
+            }
+        };
 
-struct HwIndexBuffer : public HwBase {
-    uint32_t count{};
-    uint8_t elementSize{};
+        struct HwIndexBuffer : public HwBase
+        {
+            uint32_t count{};
+            uint8_t elementSize{};
 
-    HwIndexBuffer() noexcept = default;
-    HwIndexBuffer(uint8_t elementSize, uint32_t indexCount) noexcept :
-            count(indexCount), elementSize(elementSize) {
-    }
-};
+            HwIndexBuffer() noexcept = default;
+            HwIndexBuffer(uint8_t elementSize, uint32_t indexCount) noexcept : count(indexCount), elementSize(elementSize)
+            {
+            }
+        };
 
-struct HwRenderPrimitive : public HwBase {
-    uint32_t offset{};
-    uint32_t minIndex{};
-    uint32_t maxIndex{};
-    uint32_t count{};
-    uint32_t maxVertexCount{};
-    PrimitiveType type = PrimitiveType::TRIANGLES;
-};
+        struct HwRenderPrimitive : public HwBase
+        {
+            uint32_t offset{};
+            uint32_t minIndex{};
+            uint32_t maxIndex{};
+            uint32_t count{};
+            uint32_t maxVertexCount{};
+            PrimitiveType type = PrimitiveType::TRIANGLES;
+        };
 
-struct HwProgram : public HwBase {
+        struct HwProgram : public HwBase
+        {
 #ifndef NDEBUG
-    utils::CString name;
-    explicit HwProgram(utils::CString name) noexcept : name(std::move(name)) { }
+            utils::CString name;
+            explicit HwProgram(utils::CString name) noexcept : name(std::move(name)) {}
 #else
-    explicit HwProgram(const utils::CString&) noexcept { }
+            explicit HwProgram(const utils::CString &) noexcept
+            {
+            }
 #endif
-    HwProgram() noexcept = default;
-};
+            HwProgram() noexcept = default;
+        };
 
-struct HwSamplerGroup : public HwBase {
-    // NOTE: we have to use out-of-line allocation here because the size of a Handle<> is limited
-    std::unique_ptr<SamplerGroup> sb; // FIXME: this shouldn't depend on filament::SamplerGroup
-    HwSamplerGroup() noexcept = default;
-    explicit HwSamplerGroup(size_t size) noexcept : sb(new SamplerGroup(size)) { }
-};
+        struct HwSamplerGroup : public HwBase
+        {
+            // NOTE: we have to use out-of-line allocation here because the size of a Handle<> is limited
+            std::unique_ptr<SamplerGroup> sb; // FIXME: this shouldn't depend on filament::SamplerGroup
+            HwSamplerGroup() noexcept = default;
+            explicit HwSamplerGroup(size_t size) noexcept : sb(new SamplerGroup(size)) {}
+        };
 
-struct HwUniformBuffer : public HwBase {
-};
+        struct HwUniformBuffer : public HwBase
+        {
+        };
 
-struct HwTexture : public HwBase {
-    uint32_t width{};
-    uint32_t height{};
-    uint32_t depth{};
-    SamplerType target{};
-    uint8_t levels : 4;  // This allows up to 15 levels (max texture size of 32768 x 32768)
-    uint8_t samples : 4; // Sample count per pixel (should always be a power of 2)
-    TextureFormat format{};
-    TextureUsage usage{};
-    HwStream* hwStream = nullptr;
+        struct HwTexture : public HwBase
+        {
+            uint32_t width{};
+            uint32_t height{};
+            uint32_t depth{};
+            SamplerType target{};
+            uint8_t levels : 4;  // This allows up to 15 levels (max texture size of 32768 x 32768)
+            uint8_t samples : 4; // Sample count per pixel (should always be a power of 2)
+            TextureFormat format{};
+            TextureUsage usage{};
+            HwStream *hwStream = nullptr;
 
-    HwTexture() noexcept : levels{}, samples{} {}
-    HwTexture(backend::SamplerType target, uint8_t levels, uint8_t samples,
-              uint32_t width, uint32_t height, uint32_t depth, TextureFormat fmt, TextureUsage usage) noexcept
-            : width(width), height(height), depth(depth),
-              target(target), levels(levels), samples(samples), format(fmt), usage(usage) { }
-};
+            HwTexture() noexcept : levels{}, samples{} {}
+            HwTexture(backend::SamplerType target, uint8_t levels, uint8_t samples,
+                      uint32_t width, uint32_t height, uint32_t depth, TextureFormat fmt, TextureUsage usage) noexcept
+                : width(width), height(height), depth(depth),
+                  target(target), levels(levels), samples(samples), format(fmt), usage(usage) {}
+        };
 
-struct HwRenderTarget : public HwBase {
-    uint32_t width{};
-    uint32_t height{};
-    HwRenderTarget() noexcept = default;
-    HwRenderTarget(uint32_t w, uint32_t h) : width(w), height(h) { }
-};
+        struct HwRenderTarget : public HwBase
+        {
+            uint32_t width{};
+            uint32_t height{};
+            HwRenderTarget() noexcept = default;
+            HwRenderTarget(uint32_t w, uint32_t h) : width(w), height(h) {}
+        };
 
-struct HwFence : public HwBase {
-    Platform::Fence* fence = nullptr;
-};
+        struct HwFence : public HwBase
+        {
+            Platform::Fence *fence = nullptr;
+        };
 
-struct HwSync : public HwBase {
-};
+        struct HwSync : public HwBase
+        {
+        };
 
-struct HwSwapChain : public HwBase {
-    Platform::SwapChain* swapChain = nullptr;
-};
+        struct HwSwapChain : public HwBase
+        {
+            Platform::SwapChain *swapChain = nullptr;
+        };
 
-struct HwStream : public HwBase {
-    Platform::Stream* stream = nullptr;
-    StreamType streamType = StreamType::ACQUIRED;
-    uint32_t width{};
-    uint32_t height{};
+        struct HwStream : public HwBase
+        {
+            Platform::Stream *stream = nullptr;
+            StreamType streamType = StreamType::ACQUIRED;
+            uint32_t width{};
+            uint32_t height{};
 
-    HwStream() noexcept = default;
-    explicit HwStream(Platform::Stream* stream) noexcept
-            : stream(stream), streamType(StreamType::NATIVE) {
-    }
-};
+            HwStream() noexcept = default;
+            explicit HwStream(Platform::Stream *stream) noexcept
+                : stream(stream), streamType(StreamType::NATIVE)
+            {
+            }
+        };
 
-struct HwTimerQuery : public HwBase {
-};
+        struct HwTimerQuery : public HwBase
+        {
+        };
 
-/*
+        /*
  * Base class of all Driver implementations
  */
 
-class DriverBase : public Driver {
-public:
-    DriverBase() = delete;
-    explicit DriverBase(Dispatcher* dispatcher) noexcept;
-    ~DriverBase() noexcept override;
+        class DriverBase : public Driver
+        {
+        public:
+            DriverBase() = delete;
+            explicit DriverBase(Dispatcher *dispatcher) noexcept;
+            ~DriverBase() noexcept override;
 
-    void purge() noexcept final;
+            void purge() noexcept final;
 
-    Dispatcher& getDispatcher() noexcept final { return *mDispatcher; }
+            Dispatcher &getDispatcher() noexcept final { return *mDispatcher; }
 
-    // --------------------------------------------------------------------------------------------
-    // Privates
-    // --------------------------------------------------------------------------------------------
+            // --------------------------------------------------------------------------------------------
+            // Privates
+            // --------------------------------------------------------------------------------------------
 
-protected:
-    Dispatcher* mDispatcher;
+        protected:
+            Dispatcher *mDispatcher;
 
-    inline void scheduleDestroy(BufferDescriptor&& buffer) noexcept {
-        if (buffer.hasCallback()) {
-            scheduleDestroySlow(std::move(buffer));
-        }
-    }
+            inline void scheduleDestroy(BufferDescriptor &&buffer) noexcept
+            {
+                if (buffer.hasCallback())
+                {
+                    scheduleDestroySlow(std::move(buffer));
+                }
+            }
 
-    void scheduleDestroySlow(BufferDescriptor&& buffer) noexcept;
+            void scheduleDestroySlow(BufferDescriptor &&buffer) noexcept;
 
-    void scheduleRelease(AcquiredImage&& image) noexcept;
+            void scheduleRelease(AcquiredImage &&image) noexcept;
 
-private:
-    std::mutex mPurgeLock;
-    std::vector<BufferDescriptor> mBufferToPurge;
-    std::vector<AcquiredImage> mImagesToPurge;
-};
+        private:
+            std::mutex mPurgeLock;
+            std::vector<BufferDescriptor> mBufferToPurge;
+            std::vector<AcquiredImage> mImagesToPurge;
+        };
 
-
-} // namespace backend
+    } // namespace backend
 } // namespace filament
 
 #endif // TNT_FILAMENT_DRIVER_DRIVERBASE_H
