@@ -25,18 +25,19 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#include <cstring>
 
 using namespace std;
 using namespace utils;
 
-static const char* g_packageName = "resources";
-static const char* g_deployDir = ".";
+static const char *g_packageName = "resources";
+static const char *g_deployDir = ".";
 static bool g_keepExtension = false;
 static bool g_appendNull = false;
 static bool g_generateC = false;
 static bool g_quietMode = false;
 
-static const char* USAGE = R"TXT(
+static const char *USAGE = R"TXT(
 RESGEN aggregates a sequence of binary blobs, each of which becomes a "resource" whose id
 is the basename of the input file. It produces the following set of files:
 
@@ -74,102 +75,110 @@ Examples:
                          TEXTURES_BEACH_DATA, TEXTURES_BEACH_SIZE
 )TXT";
 
-static const char* APPLE_ASM_TEMPLATE = R"ASM(
+static const char *APPLE_ASM_TEMPLATE = R"ASM(
     .global _{RESOURCES}PACKAGE
     .section __TEXT,__const
 _{RESOURCES}PACKAGE:
     .incbin "{resources}.bin"
 )ASM";
 
-static const char* ASM_TEMPLATE = R"ASM(
+static const char *ASM_TEMPLATE = R"ASM(
     .global {RESOURCES}PACKAGE
     .section .rodata
 {RESOURCES}PACKAGE:
     .incbin "{resources}.bin"
 )ASM";
 
-static void printUsage(const char* name) {
+static void printUsage(const char *name)
+{
     std::string execName(Path(name).getName());
     const std::string from("RESGEN");
     std::string usage(USAGE);
-    for (size_t pos = usage.find(from); pos != std::string::npos; pos = usage.find(from, pos)) {
+    for (size_t pos = usage.find(from); pos != std::string::npos; pos = usage.find(from, pos))
+    {
         usage.replace(pos, from.length(), execName);
     }
     puts(usage.c_str());
 }
 
-static void license() {
+static void license()
+{
     static const char *license[] = {
-        #include "licenses/licenses.inc"
-        nullptr
-    };
+#include "licenses/licenses.inc"
+        nullptr};
 
     const char **p = &license[0];
     while (*p)
         std::cout << *p++ << std::endl;
 }
 
-static int handleArguments(int argc, char* argv[]) {
-    static constexpr const char* OPTSTR = "hLp:x:ktcq";
+static int handleArguments(int argc, char *argv[])
+{
+    static constexpr const char *OPTSTR = "hLp:x:ktcq";
     static const struct option OPTIONS[] = {
-            { "help",                 no_argument, 0, 'h' },
-            { "license",              no_argument, 0, 'L' },
-            { "package",        required_argument, 0, 'p' },
-            { "deploy",         required_argument, 0, 'x' },
-            { "keep",                 no_argument, 0, 'k' },
-            { "text",                 no_argument, 0, 't' },
-            { "cfile",                no_argument, 0, 'c' },
-            { "quiet",                no_argument, 0, 'q' },
-            { 0, 0, 0, 0 }  // termination of the option list
+        {"help", no_argument, 0, 'h'},
+        {"license", no_argument, 0, 'L'},
+        {"package", required_argument, 0, 'p'},
+        {"deploy", required_argument, 0, 'x'},
+        {"keep", no_argument, 0, 'k'},
+        {"text", no_argument, 0, 't'},
+        {"cfile", no_argument, 0, 'c'},
+        {"quiet", no_argument, 0, 'q'},
+        {0, 0, 0, 0} // termination of the option list
     };
 
     int opt;
     int optionIndex = 0;
 
-    while ((opt = getopt_long(argc, argv, OPTSTR, OPTIONS, &optionIndex)) >= 0) {
+    while ((opt = getopt_long(argc, argv, OPTSTR, OPTIONS, &optionIndex)) >= 0)
+    {
         std::string arg(optarg ? optarg : "");
-        switch (opt) {
-            default:
-            case 'h':
-                printUsage(argv[0]);
-                exit(0);
-            case 'L':
-                license();
-                exit(0);
-            case 'p':
-                g_packageName = optarg;
-                break;
-            case 'x':
-                g_deployDir = optarg;
-                break;
-            case 'k':
-                g_keepExtension = true;
-                break;
-            case 't':
-                g_appendNull = true;
-                break;
-            case 'c':
-                g_generateC = true;
-                break;
-            case 'q':
-                g_quietMode = true;
-                break;
+        switch (opt)
+        {
+        default:
+        case 'h':
+            printUsage(argv[0]);
+            exit(0);
+        case 'L':
+            license();
+            exit(0);
+        case 'p':
+            g_packageName = optarg;
+            break;
+        case 'x':
+            g_deployDir = optarg;
+            break;
+        case 'k':
+            g_keepExtension = true;
+            break;
+        case 't':
+            g_appendNull = true;
+            break;
+        case 'c':
+            g_generateC = true;
+            break;
+        case 'q':
+            g_quietMode = true;
+            break;
         }
     }
 
     return optind;
 }
 
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[])
+{
     const int optionIndex = handleArguments(argc, argv);
     const int numArgs = argc - optionIndex;
-    if (numArgs < 1) {
+    if (numArgs < 1)
+    {
         printUsage(argv[0]);
         return 1;
     }
 
     vector<Path> inputPaths;
-    for (int argIndex = optionIndex; argIndex < argc; ++argIndex) {
+    for (int argIndex = optionIndex; argIndex < argc; ++argIndex)
+    {
         inputPaths.emplace_back(argv[argIndex]);
     }
 
@@ -180,7 +189,8 @@ int main(int argc, char* argv[]) {
     std::string package = packagePrefix + "PACKAGE";
 
     const Path deployDir(g_deployDir);
-    if (!deployDir.exists()) {
+    if (!deployDir.exists())
+    {
         deployDir.mkdirRecursive();
     }
 
@@ -207,21 +217,24 @@ int main(int argc, char* argv[]) {
 
     // Generate the Apple-friendly assembly language file.
     ofstream appleAsmStream(appleAsmPath.getPath());
-    if (!appleAsmStream) {
+    if (!appleAsmStream)
+    {
         cerr << "Unable to open " << appleAsmPath << endl;
         exit(1);
     }
 
     // Generate the non-Apple assembly language file.
     ofstream asmStream(asmPath.getPath());
-    if (!asmStream) {
+    if (!asmStream)
+    {
         cerr << "Unable to open " << asmPath << endl;
         exit(1);
     }
 
     // Open the bin file for writing.
     ofstream binStream(binPath.getPath(), ios::binary);
-    if (!binStream) {
+    if (!binStream)
+    {
         cerr << "Unable to open " << binPath << endl;
         exit(1);
     }
@@ -229,10 +242,12 @@ int main(int argc, char* argv[]) {
     // Open the header file stream for writing.
     ostringstream headerStream;
     headerStream << "#ifndef " << packagePrefix << "H_" << endl
-            << "#define " << packagePrefix << "H_" << endl << endl
-            << "#include <stdint.h>" << endl << endl
-            << "extern \"C\" {" << endl
-            << "    extern const uint8_t " << package << "[];" << endl;
+                 << "#define " << packagePrefix << "H_" << endl
+                 << endl
+                 << "#include <stdint.h>" << endl
+                 << endl
+                 << "extern \"C\" {" << endl
+                 << "    extern const uint8_t " << package << "[];" << endl;
 
     ostringstream headerMacros;
     ostringstream xxdDefinitions;
@@ -241,9 +256,11 @@ int main(int argc, char* argv[]) {
 
     // Open the generated C file for writing.
     ofstream xxdStream;
-    if (g_generateC) {
+    if (g_generateC)
+    {
         xxdStream = ofstream(xxdPath.getPath());
-        if (!xxdStream) {
+        if (!xxdStream)
+        {
             cerr << "Unable to open " << xxdPath << endl;
             exit(1);
         }
@@ -252,14 +269,17 @@ int main(int argc, char* argv[]) {
 
     // Iterate through each input file and consume its contents.
     size_t offset = 0;
-    for (const auto& inPath : inputPaths) {
+    for (const auto &inPath : inputPaths)
+    {
         ifstream inStream(inPath.getPath(), ios::binary);
-        if (!inStream) {
+        if (!inStream)
+        {
             cerr << "Unable to open " << inPath << endl;
             exit(1);
         }
         vector<uint8_t> content((istreambuf_iterator<char>(inStream)), {});
-        if (g_appendNull) {
+        if (g_appendNull)
+        {
             content.push_back(0);
         }
 
@@ -270,68 +290,75 @@ int main(int argc, char* argv[]) {
         const std::string prname = packagePrefix + rname;
 
         // Write the binary blob into the bin file.
-        binStream.write((const char*) content.data(), content.size());
+        binStream.write((const char *)content.data(), content.size());
 
         // Write the offsets and sizes.
         headerMacros
-                << "#define " << prname << "_DATA (" << package << " + " << prname << "_OFFSET)\n";
+            << "#define " << prname << "_DATA (" << package << " + " << prname << "_OFFSET)\n";
 
         headerStream
-                << "    extern int " << prname << "_OFFSET;\n"
-                << "    extern int " << prname << "_SIZE;\n";
+            << "    extern int " << prname << "_OFFSET;\n"
+            << "    extern int " << prname << "_SIZE;\n";
 
         dataAsmStream
-                << prname << "_OFFSET:\n"
-                << "    .int " << offset << "\n"
-                << prname << "_SIZE:\n"
-                << "    .int " << content.size() << "\n";
+            << prname << "_OFFSET:\n"
+            << "    .int " << offset << "\n"
+            << prname << "_SIZE:\n"
+            << "    .int " << content.size() << "\n";
 
         asmStream
-                << "    .global " << prname << "_OFFSET;\n"
-                << "    .global " << prname << "_SIZE;\n";
+            << "    .global " << prname << "_OFFSET;\n"
+            << "    .global " << prname << "_SIZE;\n";
 
         appleDataAsmStream
-                << "_" << prname << "_OFFSET:\n"
-                << "    .int " << offset << "\n"
-                << "_" << prname << "_SIZE:\n"
-                << "    .int " << content.size() << "\n";
+            << "_" << prname << "_OFFSET:\n"
+            << "    .int " << offset << "\n"
+            << "_" << prname << "_SIZE:\n"
+            << "    .int " << content.size() << "\n";
 
         appleAsmStream
-                << "    .global _" << prname << "_OFFSET;\n"
-                << "    .global _" << prname << "_SIZE;\n";
+            << "    .global _" << prname << "_OFFSET;\n"
+            << "    .global _" << prname << "_SIZE;\n";
 
         // Write the xxd-style ASCII array, followed by a blank line.
-        if (g_generateC) {
+        if (g_generateC)
+        {
             xxdDefinitions
-                    << "int " << prname << "_OFFSET = " << offset << ";\n"
-                    << "int " << prname << "_SIZE = " << content.size() << ";\n";
+                << "int " << prname << "_OFFSET = " << offset << ";\n"
+                << "int " << prname << "_SIZE = " << content.size() << ";\n";
 
             xxdStream << "// " << rname << "\n";
             xxdStream << setfill('0') << hex;
             size_t i = 0;
-            for (; i < content.size(); i++) {
-                if (i > 0 && i % 20 == 0) {
+            for (; i < content.size(); i++)
+            {
+                if (i > 0 && i % 20 == 0)
+                {
                     xxdStream << "\n";
                 }
-                xxdStream << "0x" << setw(2) << (int) content[i] << ", ";
+                xxdStream << "0x" << setw(2) << (int)content[i] << ", ";
             }
-            if (i % 20 != 0) xxdStream << "\n";
+            if (i % 20 != 0)
+                xxdStream << "\n";
             xxdStream << "\n";
         }
 
         offset += content.size();
     }
 
-    headerStream << "}\n" << headerMacros.str();
+    headerStream << "}\n"
+                 << headerMacros.str();
     headerStream << "\n#endif\n";
 
     // To optimize builds, avoid overwriting the header file if nothing has changed.
     bool headerIsDirty = true;
     ifstream headerInStream(headerPath.getPath(), std::ifstream::ate);
     string headerContents = headerStream.str();
-    if (headerInStream) {
+    if (headerInStream)
+    {
         long fileSize = static_cast<long>(headerInStream.tellg());
-        if (fileSize == headerContents.size()) {
+        if (fileSize == headerContents.size())
+        {
             vector<char> previous(fileSize);
             headerInStream.seekg(0);
             headerInStream.read(previous.data(), fileSize);
@@ -339,9 +366,11 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    if (headerIsDirty) {
+    if (headerIsDirty)
+    {
         ofstream headerOutStream(headerPath.getPath());
-        if (!headerOutStream) {
+        if (!headerOutStream)
+        {
             cerr << "Unable to open " << headerPath << endl;
             exit(1);
         }
@@ -354,22 +383,27 @@ int main(int argc, char* argv[]) {
     appleAsmStream << aasmstr << appleDataAsmStream.str() << endl;
     appleAsmStream.close();
 
-    if (!g_quietMode) {
+    if (!g_quietMode)
+    {
         cout << "Generated files: "
-            << headerPath << " "
-            << asmPath << " "
-            << appleAsmPath << " "
-            << binPath;
+             << headerPath << " "
+             << asmPath << " "
+             << appleAsmPath << " "
+             << binPath;
     }
 
-    if (g_generateC) {
-        xxdStream << "};\n\n" << xxdDefinitions.str();
-        if (!g_quietMode) {
+    if (g_generateC)
+    {
+        xxdStream << "};\n\n"
+                  << xxdDefinitions.str();
+        if (!g_quietMode)
+        {
             cout << " " << xxdPath;
         }
     }
 
-    if (!g_quietMode) {
+    if (!g_quietMode)
+    {
         cout << endl;
     }
 }
