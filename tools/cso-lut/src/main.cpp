@@ -202,16 +202,16 @@ static float conesIntersection(float cosTheta1, float cosTheta2, float cosAlpha)
 {
     // Mazonka 2012, "Solid Angle of Conical Surfaces, Polyhedral Cones, and
     // Intersecting Spherical Caps"
-    const float sinAlpha = std::sqrtf(1.0f - sq(cosAlpha));
+    const float sinAlpha = sqrtf(1.0f - sq(cosAlpha));
 
     auto omega = [cosAlpha, sinAlpha](float cosTheta1, float cosTheta2) {
-        float sinTheta1 = std::sqrtf(1.0f - sq(cosTheta1));
+        float sinTheta1 = sqrtf(1.0f - sq(cosTheta1));
 
         float ty = cosTheta2 - cosAlpha * cosTheta1;
         float tx = sinAlpha * cosTheta1;
 
         float cosPhi = clamp((ty * cosTheta1) / (tx * sinTheta1), -1.0f, 1.0f);
-        float cosBeta = clamp(ty / (sinTheta1 * std::sqrtf(sq(tx) + sq(ty))), -1.0f, 1.0f);
+        float cosBeta = clamp(ty / (sinTheta1 * sqrtf(sq(tx) + sq(ty))), -1.0f, 1.0f);
 
         float phi = acosf(cosPhi);
         float beta = acosf(cosBeta);
@@ -280,7 +280,7 @@ static void generateSampleRays(float cosAngle, float3 *samples, size_t sampleCou
         float r2 = rand() / float(RAND_MAX);
 
         float cosTheta = r1 * (1.0f - cosAngle) + cosAngle;
-        float sinTheta = std::sqrtf(1.0f - sq(cosTheta));
+        float sinTheta = sqrtf(1.0f - sq(cosTheta));
 
         float phi = 2.0f * PI_F * r2 - 1.0f;
         float cosPhi = cosf(phi);
@@ -294,7 +294,7 @@ static float groundTruthVisibility(float cosTheta, float cosAlpha,
                                    float3 *samples, size_t sampleCount)
 {
 
-    float sinAlpha = std::sqrtf(1.0f - sq(cosAlpha));
+    float sinAlpha = sqrtf(1.0f - sq(cosAlpha));
     float3 occluderDirection{sinAlpha, 0.0f, cosAlpha};
 
     size_t hits = 0;
