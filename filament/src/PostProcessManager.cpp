@@ -15,7 +15,6 @@
  */
 
 #include "PostProcessManager.h"
-#include <cmath>
 #include "details/Engine.h"
 
 #include "fg/FrameGraph.h"
@@ -38,6 +37,7 @@
 #include <math/half.h>
 #include <math/mat2.h>
 
+#include <cmath>
 #include <algorithm>
 #include <limits>
 
