@@ -452,7 +452,7 @@ namespace filament
         for (size_t c = 1; c < cascades; c++)
         {
             splitPositions[s++] =
-                (near * std::powf(far / near, (float)c / cascades) - near) / (far - near);
+                (near * powf(far / near, (float)c / cascades) - near) / (far - near);
         }
     }
 
