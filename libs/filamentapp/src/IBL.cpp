@@ -19,7 +19,7 @@
 #include <fstream>
 #include <iostream>
 #include <string>
-
+#include <string.h>
 #include <filament/Engine.h>
 #include <filament/Material.h>
 #include <filament/MaterialInstance.h>
